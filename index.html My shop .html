@@ -1,0 +1,106 @@
+<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My shop</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@600;800&family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--p:#0e7c86;--pd:#0a5f67;--a:#ffb800;--ink:#10222e;--mu:#6b7c87;--bg:#f3f8f8;--ln:#dbe7ea}
+*{box-sizing:border-box;margin:0}
+body{font:15px/1.5 'Hind Siliguri',system-ui,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:84px}
+h1,h2,.logo,.pr{font-family:'Baloo Da 2','Hind Siliguri',sans-serif}
+header{position:sticky;top:0;z-index:5;background:#fff;padding:8px 14px;display:flex;align-items:center;border-bottom:1px solid var(--ln)}
+.logo{font-weight:800;font-size:24px;color:var(--p)}.logo i{font-style:normal;color:var(--a)}
+main{padding:14px;max-width:760px;margin:auto}
+input,select,textarea{width:100%;padding:11px 12px;border:1.5px solid var(--ln);border-radius:10px;font:inherit;background:#fff;margin:4px 0;color:var(--ink)}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--p);outline-offset:1px}
+button{font:inherit;font-weight:600;border:0;border-radius:99px;padding:10px 18px;background:var(--p);color:#fff;cursor:pointer}
+button.g{background:#e3eef0;color:var(--ink)}button.y{background:var(--a);color:var(--ink)}
+.hero{background:var(--p);color:#fff;border-radius:22px 22px 22px 4px;padding:22px 20px;margin-bottom:14px}
+.hero h2{font-size:25px;line-height:1.25;font-weight:800}.hero p{opacity:.9}.hero b{color:var(--a)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--ln);display:flex;flex-direction:column}
+.card img{width:100%;aspect-ratio:1;object-fit:cover;background:#e3eef0}
+.card>div{padding:10px}.card small{color:var(--mu);display:block;line-height:1.3}
+.pr{color:var(--pd);font-weight:800;font-size:19px}
+.box{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.tag{font-size:12px;padding:2px 10px;border-radius:99px;background:#fff3cc;color:#7a5800}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--ln);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
+nav a{flex:1;text-align:center;font-size:12px;color:var(--mu);padding:4px 2px;cursor:pointer}nav a.on{color:var(--p);font-weight:600}
+nav b{background:var(--a);color:var(--ink);border-radius:99px;padding:0 6px;font-size:11px}
+.wa{position:fixed;right:14px;bottom:calc(76px + env(safe-area-inset-bottom));width:48px;height:48px;border-radius:50%;background:#25d366;display:grid;place-items:center;font-size:22px;text-decoration:none;box-shadow:0 2px 8px #0003}
+label{display:block;font-size:13px;color:var(--mu);margin-top:6px}
+</style></head><body>
+<div id="app"><p style="padding:30px">লোড হচ্ছে…</p></div>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import{getFirestore,collection,doc,getDoc,getDocs,setDoc,addDoc,updateDoc,deleteDoc,query,where,increment}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ===== এখানে আপনার Firebase তথ্য বসান ===== */
+const CFG={apiKey:"AIzaSyAQvHhc7Zc_Z7AsJKxPchzrA3oacI_SyHs",authDomain:"myshop-82f95.firebaseapp.com",projectId:"myshop-82f95",appId:"1:909724312474:web:b0c3d255b61d0b2ae85023"};
+const ADMIN="01806495797"; /* এই নম্বর দিয়ে আগে রেজিস্ট্রেশন করলে আপনি অ্যাডমিন */
+/* ========================================= */
+
+if(CFG.apiKey.startsWith("PASTE")){document.body.innerHTML="<p style='padding:24px'>Firebase তথ্য বসানো বাকি আছে।</p>";throw 0}
+const db=getFirestore(initializeApp(CFG)),auth=getAuth();
+const $=s=>document.querySelector(s),W=window,tk=n=>"৳"+Math.round(n||0);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>"&#"+c.charCodeAt(0)+";");
+const ST={pending:"অপেক্ষমান",confirmed:"কনফার্ম",shipped:"পাঠানো হয়েছে",delivered:"ডেলিভারি হয়েছে",cancelled:"বাতিল"};
+let U=null,ME={},P=[],OR=[],WD=[],tab="home",at="prod",q="",reg=false,hb=0;
+let S={commission:10,minWithdraw:100,delivery:0,bkash:"",nagad:"",whatsapp:ADMIN};
+let cart=JSON.parse(localStorage.cart||"{}");
+const rf=new URLSearchParams(location.search).get("ref");if(rf&&/^[A-Za-z0-9]{20,40}$/.test(rf))localStorage.ref=rf;
+const sv=()=>localStorage.cart=JSON.stringify(cart),cnt=()=>Object.values(cart).reduce((a,b)=>a+b,0);
+const items=()=>P.filter(p=>cart[p.id]).map(p=>({id:p.id,name:p.name,price:p.price,qty:cart[p.id]}));
+const sub=()=>items().reduce((s,i)=>s+i.price*i.qty,0);
+const cm=o=>Math.round((o.total-(o.delivery||0))*S.commission)/100;
+const loadP=async()=>P=(await getDocs(collection(db,"products"))).docs.map(d=>({id:d.id,...d.data()}));
+const list=async c=>(await getDocs(collection(db,c))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.ts-a.ts);
+
+onAuthStateChanged(auth,async u=>{U=u;if(u){const[a,b]=await Promise.all([getDoc(doc(db,"users",u.uid)),getDoc(doc(db,"settings","main"))]);ME=a.data()||{};if(b.exists())S={...S,...b.data()};await loadP();const beat=()=>setDoc(doc(db,"presence",u.uid),{t:Date.now()}).catch(()=>{});beat();if(!hb)hb=setInterval(beat,30000)}render()});
+
+/* ---------- লগিন / রেজিস্ট্রেশন ---------- */
+const authV=()=>`<main><div class="hero"><h1 class="logo" style="color:#fff">My <i>shop</i></h1><p>${reg?"একবার নিবন্ধন করুন, পরে শুধু লগিন।":"আবার স্বাগতম! লগিন করুন।"}</p></div><div class="box">${reg?'<input id="n" placeholder="আপনার নাম">':""}<input id="ph" type="tel" placeholder="মোবাইল নম্বর (01XXXXXXXXX)"><input id="pw" type="password" placeholder="পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)"><button style="width:100%;margin-top:8px" onclick="W.auth()">${reg?"নিবন্ধন করুন":"লগিন করুন"}</button><p style="text-align:center;margin-top:12px;color:var(--p);cursor:pointer" onclick="W.tg()">${reg?"অ্যাকাউন্ট আছে? লগিন করুন":"নতুন? নিবন্ধন করুন"}</p></div></main>`;
+W.tg=()=>{reg=!reg;render()};
+W.auth=async()=>{const ph=$("#ph").value.trim(),pw=$("#pw").value;if(!/^01\d{9}$/.test(ph))return alert("সঠিক মোবাইল নম্বর দিন");try{if(reg){const n=$("#n").value.trim();if(!n)return alert("নাম দিন");const c=await createUserWithEmailAndPassword(auth,ph+"@myshop.app",pw);await setDoc(doc(db,"users",c.user.uid),{name:n,phone:ph,earned:0,paid:0,ts:Date.now()});location.reload()}else await signInWithEmailAndPassword(auth,ph+"@myshop.app",pw)}catch(e){alert(e.code=="auth/email-already-in-use"?"এই নম্বরে অ্যাকাউন্ট আছে, লগিন করুন":"নম্বর বা পাসওয়ার্ড ঠিক নেই")}};
+W.out=()=>signOut(auth);
+
+/* ---------- হোম ---------- */
+const grid=()=>{const k=q.toLowerCase();return P.filter(p=>p.name.toLowerCase().includes(k)).map(p=>`<div class="card"><img src="${p.img}" alt=""><div><b>${esc(p.name)}</b><small>${esc(p.desc)}</small><div class="pr">${tk(p.price)}</div><button class="y" style="width:100%;margin-top:6px;padding:8px" onclick="W.add('${p.id}')">কার্টে যোগ করুন</button></div></div>`).join("")||"<p>এখনও কোনো পণ্য নেই</p>"};
+const homeV=()=>`<div class="hero"><h2>ঘড়ি আর বাচ্চাদের পণ্য, <b>ঘরে বসেই</b></h2><p>পছন্দ করুন, অর্ডার দিন, দরজায় নিন।</p></div><input placeholder="🔍 পণ্য খুঁজুন" value="${esc(q)}" oninput="W.sq(this.value)"><div class="grid" id="g" style="margin-top:10px">${grid()}</div>`;
+W.sq=v=>{q=v;$("#g").innerHTML=grid()};
+W.add=id=>{cart[id]=(cart[id]||0)+1;sv();$("#cc").textContent=cnt()};
+
+/* ---------- কার্ট ও অর্ডার ---------- */
+W.qty=(id,d)=>{cart[id]+=d;if(cart[id]<1)delete cart[id];sv();render()};
+const cartV=()=>{const it=items();if(!it.length)return'<div class="box">কার্ট খালি। হোম থেকে পণ্য যোগ করুন।</div>';const d=+S.delivery||0;return it.map(i=>`<div class="box row"><div><b>${esc(i.name)}</b><br>${tk(i.price)}</div><div><button class="g" onclick="W.qty('${i.id}',-1)">−</button> ${i.qty} <button class="g" onclick="W.qty('${i.id}',1)">+</button></div></div>`).join("")+`<div class="box"><div class="row"><span>পণ্যের দাম</span><b>${tk(sub())}</b></div>${d?`<div class="row"><span>ডেলিভারি চার্জ</span><b>${tk(d)}</b></div>`:""}<div class="row"><span>মোট</span><b class="pr">${tk(sub()+d)}</b></div></div><div class="box"><input id="on" value="${esc(ME.name)}" placeholder="নাম"><input id="op" type="tel" value="${esc(ME.phone)}" placeholder="মোবাইল নম্বর"><textarea id="oa" rows="2" placeholder="পূর্ণ ঠিকানা (গ্রাম/এলাকা, থানা, জেলা)"></textarea><select id="om" onchange="W.pm()"><option value="cod">ক্যাশ অন ডেলিভারি</option><option value="bkash">বিকাশ</option><option value="nagad">নগদ</option></select><p id="pi" style="color:var(--pd)"></p><input id="ot" placeholder="TrxID" style="display:none"><button style="width:100%;margin-top:8px" onclick="W.order()">অর্ডার কনফার্ম করুন</button></div>`};
+W.pm=()=>{const m=$("#om").value;$("#ot").style.display=m=="cod"?"none":"";$("#pi").textContent=m=="cod"?"":`${m=="bkash"?"বিকাশ":"নগদ"} (Send Money): ${S[m]||"নম্বর সেট করা হয়নি"} — টাকা পাঠিয়ে TrxID দিন`};
+W.order=async()=>{const sb=sub(),d=+S.delivery||0,o={uid:U.uid,name:$("#on").value.trim(),phone:$("#op").value.trim(),addr:$("#oa").value.trim(),pay:$("#om").value,trx:$("#ot").value.trim(),items:items(),delivery:d,total:sb+d,status:"pending",ts:Date.now()};if(!o.name||!/^01\d{9}$/.test(o.phone)||o.addr.length<8)return alert("নাম, সঠিক মোবাইল নম্বর ও পূর্ণ ঠিকানা দিন");if(o.pay!="cod"&&!o.trx)return alert("TrxID দিন");const r=localStorage.ref;if(r&&r!=U.uid)o.ref=r;await addDoc(collection(db,"orders"),o);cart={};sv();tab="orders";alert("অর্ডার হয়েছে! ধন্যবাদ 🎉");render()};
+const ordersV=async()=>{const s=await getDocs(query(collection(db,"orders"),where("uid","==",U.uid)));return s.docs.map(d=>d.data()).sort((a,b)=>b.ts-a.ts).map(o=>`<div class="box"><div class="row"><b>${new Date(o.ts).toLocaleDateString("bn-BD")}</b><span class="tag">${ST[o.status]}</span></div>${o.items.map(i=>esc(i.name)+" × "+i.qty).join("<br>")}<div class="pr">মোট ${tk(o.total)}</div></div>`).join("")||'<div class="box">এখনও কোনো অর্ডার নেই</div>'};
+
+/* ---------- অ্যাফিলিয়েট ---------- */
+const earnV=async()=>{ME=(await getDoc(doc(db,"users",U.uid))).data()||ME;const av=(ME.earned||0)-(ME.paid||0),l=location.origin+location.pathname+"?ref="+U.uid;return`<div class="hero"><p>আপনার ইনকাম</p><h2>${tk(av)}</h2><p>মোট ${tk(ME.earned)} · তোলা হয়েছে ${tk(ME.paid)}</p></div><div class="box"><b>আপনার অ্যাফিলিয়েট লিংক</b><input readonly value="${l}" onclick="this.select()"><p style="color:var(--mu)">এই লিংকে কেউ অর্ডার করলে, ডেলিভারি হওয়ার পর আপনি ${S.commission}% কমিশন পাবেন।</p><button onclick="navigator.clipboard.writeText('${l}');alert('কপি হয়েছে')">লিংক কপি করুন</button></div><div class="box"><b>টাকা তুলুন</b> <small>(কমপক্ষে ${tk(S.minWithdraw)})</small><select id="wm"><option value="bkash">বিকাশ</option><option value="nagad">নগদ</option></select><input id="wn" type="tel" placeholder="নম্বর"><input id="wa" type="number" placeholder="পরিমাণ (৳)"><button style="width:100%" onclick="W.wd(${av})">টাকা তোলার অনুরোধ পাঠান</button></div>`};
+W.wd=async av=>{const a=+$("#wa").value,n=$("#wn").value.trim();if(a<S.minWithdraw||a>av||!/^01\d{9}$/.test(n))return alert("পরিমাণ বা নম্বর ঠিক নেই");await addDoc(collection(db,"withdrawals"),{uid:U.uid,name:ME.name,method:$("#wm").value,number:n,amount:a,status:"pending",ts:Date.now()});alert("অনুরোধ পাঠানো হয়েছে")};
+
+/* ---------- অ্যাডমিন ---------- */
+const adminV=async()=>{const[u,pr]=await Promise.all([getDocs(collection(db,"users")),getDocs(collection(db,"presence"))]);const on=pr.docs.filter(d=>Date.now()-d.data().t<75000).length;
+let h=`<div class="grid"><div class="box"><small>মোট ইউজার</small><h2>${u.size}</h2></div><div class="box"><small>এখন সাইটে আছে</small><h2>🟢 ${on}</h2></div></div><div class="row" style="margin-bottom:12px">${[["prod","পণ্য"],["ord","অর্ডার"],["wd","উইথড্র"],["set","সেটিংস"]].map(([k,t])=>`<button class="${at==k?"":"g"}" style="flex:1;padding:9px 2px" onclick="W.sat('${k}')">${t}</button>`).join("")}</div>`;
+if(at=="prod")h+=`<div class="box"><input id="pn" placeholder="পণ্যের নাম"><input id="pp" type="number" placeholder="দাম (৳)"><input id="pd" placeholder="ছোট বিবরণ"><input id="pf" type="file" accept="image/*"><button style="width:100%;margin-top:6px" onclick="W.addP()">পণ্য যোগ করুন</button></div>`+P.map(p=>`<div class="box row"><span>${esc(p.name)} · ${tk(p.price)}</span><button class="g" onclick="W.delP('${p.id}')">🗑️ মুছুন</button></div>`).join("");
+if(at=="ord"){OR=await list("orders");h+=OR.map((o,i)=>`<div class="box"><b>${esc(o.name)}</b> · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a><br>${esc(o.addr)}<br>${o.items.map(i=>esc(i.name)+" × "+i.qty).join(", ")}<br><b class="pr">${tk(o.total)}</b> · ${esc(o.pay)} ${esc(o.trx)}${o.ref?`<br><small>অ্যাফিলিয়েট কমিশন: ${tk(cm(o))}</small>`:""}<select onchange="W.st(${i},this.value)">${Object.entries(ST).map(([k,v])=>`<option value="${k}" ${k==o.status?"selected":""}>${v}</option>`).join("")}</select></div>`).join("")||'<div class="box">কোনো অর্ডার নেই</div>'}
+if(at=="wd"){WD=await list("withdrawals");h+=WD.map((w,i)=>`<div class="box"><b>${esc(w.name)}</b> · ${tk(w.amount)}<br>${esc(w.method)} ${esc(w.number)} <span class="tag">${w.status=="paid"?"পরিশোধ হয়েছে":"অপেক্ষমান"}</span>${w.status!="paid"?`<br><button style="margin-top:6px" onclick="W.pay(${i})">পরিশোধ করেছি</button>`:""}</div>`).join("")||'<div class="box">কোনো অনুরোধ নেই</div>'}
+if(at=="set")h+=`<div class="box">${[["commission","কমিশন (%)"],["minWithdraw","সর্বনিম্ন উইথড্র (৳)"],["delivery","ডেলিভারি চার্জ (৳) — ০ মানে বন্ধ"],["bkash","বিকাশ নম্বর"],["nagad","নগদ নম্বর"],["whatsapp","WhatsApp নম্বর"]].map(([k,t])=>`<label>${t}<input id="s_${k}" value="${esc(S[k])}"></label>`).join("")}<button style="width:100%;margin-top:10px" onclick="W.sset()">সেভ করুন</button></div>`;
+return h};
+W.sat=k=>{at=k;render()};
+W.addP=async()=>{const f=$("#pf").files[0],n=$("#pn").value.trim(),pr=+$("#pp").value;if(!f||!n||!pr)return alert("নাম, দাম ও ছবি দিন");const im=new Image();im.src=URL.createObjectURL(f);await im.decode();const c=document.createElement("canvas"),k=Math.min(1,500/Math.max(im.width,im.height));c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);await addDoc(collection(db,"products"),{name:n,price:pr,desc:$("#pd").value.trim(),img:c.toDataURL("image/jpeg",.7),ts:Date.now()});await loadP();render()};
+W.delP=async id=>{if(confirm("পণ্যটি মুছে ফেলবেন?")){await deleteDoc(doc(db,"products",id));await loadP();render()}};
+W.st=async(i,v)=>{const o=OR[i],ad=(uid,x)=>o.ref&&updateDoc(doc(db,"users",o.ref),{earned:increment(x)}).catch(()=>{});await updateDoc(doc(db,"orders",o.id),{status:v});if(v=="delivered"&&o.status!="delivered")await ad(0,cm(o));if(o.status=="delivered"&&v!="delivered")await ad(0,-cm(o));o.status=v};
+W.pay=async i=>{const w=WD[i];await updateDoc(doc(db,"withdrawals",w.id),{status:"paid"});await updateDoc(doc(db,"users",w.uid),{paid:increment(w.amount)});render()};
+W.sset=async()=>{const n={};["commission","minWithdraw","delivery"].forEach(k=>n[k]=+$("#s_"+k).value||0);["bkash","nagad","whatsapp"].forEach(k=>n[k]=$("#s_"+k).value.trim());await setDoc(doc(db,"settings","main"),n);S={...S,...n};alert("সেভ হয়েছে")};
+
+/* ---------- রেন্ডার ---------- */
+W.go=k=>{tab=k;render()};
+async function render(){const a=$("#app");if(!U){a.innerHTML=authV();return}
+const N=[["home","🏠","হোম"],["cart","🛒","কার্ট"],["orders","📦","অর্ডার"],["earn","💰","ইনকাম"]];if(ME.phone==ADMIN)N.push(["admin","⚙️","অ্যাডমিন"]);
+a.innerHTML=`<header><span class="logo">My <i>shop</i></span><button class="g" style="margin-left:auto;padding:6px 14px" onclick="W.out()">বের হন</button></header><main id="m"></main><a class="wa" href="https://wa.me/88${esc(S.whatsapp)}" target="_blank">💬</a><nav>${N.map(([k,i,t])=>`<a class="${tab==k?"on":""}" onclick="W.go('${k}')">${i}<br>${t}${k=="cart"?` <b id="cc">${cnt()}</b>`:""}</a>`).join("")}</nav>`;
+$("#m").innerHTML=await({home:homeV,cart:cartV,orders:ordersV,earn:earnV,admin:adminV}[tab])()}
+</script></body></html>
